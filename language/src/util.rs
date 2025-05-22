@@ -13,7 +13,7 @@ pub fn assume<'a>(symbol: &'a str, input: &'a str) -> ParseResult<'a, &'a str> {
     }
 }
 
-pub fn skip_whitespace(input: &str) -> ParseResult<&str> {
+pub const fn skip_whitespace(input: &str) -> ParseResult<&str> {
     Ok(("", input.trim_ascii_start()))
 }
 
@@ -30,10 +30,15 @@ macro_rules! parse_if {
             rest = next
         }
         // SAFETY: All Fondant source files must be valid UTF-8
-        unsafe {
-            let (_, rest) = skip_whitespace(std::str::from_utf8_unchecked(rest))?;
-            (String::from_utf8_unchecked(ident), rest)
+        let ident = unsafe { String::from_utf8_unchecked(ident) };
+        if matches!(ident.as_str(), "fun" | "let") {
+            return Err(ParseError::Expected(
+                "identifier",
+                format!("keyword: {}", ident),
+            ));
         }
+        let (_, rest) = unsafe { skip_whitespace(std::str::from_utf8_unchecked(rest))? };
+        (ident, rest)
     }};
 }
 
@@ -46,7 +51,10 @@ where
             Ok(expr) => Ok(expr),
             Err(_) => either_one(&rest, input),
         },
-        &[] => Err(ParseError::InvalidInput),
+        &[] => {
+            dbg!(input);
+            Err(ParseError::InvalidInput)
+        }
     }
 }
 
