@@ -1,5 +1,6 @@
-use crate::errors::ParseError;
-use crate::{Expr, ParseResult};
+use crate::ast::Expr;
+
+use super::{ParseError, ParseResult};
 
 pub fn assume<'a>(symbol: &'a str, input: &'a str) -> ParseResult<'a, &'a str> {
     if input.starts_with(symbol) {
